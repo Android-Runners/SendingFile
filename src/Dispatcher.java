@@ -24,6 +24,8 @@ public class Dispatcher {
 
         int clientNumber;
 
+        private Listener listener;
+
         @Override
         public void run() {
             scanner = new Scanner(System.in);
@@ -45,15 +47,19 @@ public class Dispatcher {
                 e.printStackTrace();
             }
 
-            new Thread(new Listener(socket)).start();
+            listener = new Listener(socket);
+            new Thread(listener).start();
+
+            MyInt countK = null;
 
             while(true) {
 
                 String path = scanner.nextLine();
 
                 try {
-                    byte j = 0;
                     FileInputStream fileInputStream = new FileInputStream(path);
+                    byte j = 0;
+                    countK = new MyInt(f(fileInputStream.available()));
 //                    System.out.println("File size = " + fileInputStream.available());
                     while(fileInputStream.available() > 0) {
                         if(fileInputStream.available() < buf.length) {
@@ -72,11 +78,10 @@ public class Dispatcher {
 
                 // Задержка
 //                for(int i = 0; i < 10000000; ++i);
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+                System.out.println("coutnt" + countK.value);
+
+                while(!countK.equals(listener.getBuffersCount()));
 
                 try {
                     // TODO: string "end"
@@ -88,6 +93,44 @@ public class Dispatcher {
                 }
 
                 buf = new byte[60 * 1024];
+            }
+        }
+
+        private int f(boolean d) {
+            return d ? 1 : 0;
+        }
+
+        private int f(int size) {
+            return size / (60 * 1024) + f((size % (60 * 1024)) == 0);
+        }
+
+        private class MyInt {
+            public int getValue() {
+                return value;
+            }
+
+            public void setValue(int value) {
+                this.value = value;
+            }
+
+            private int value;
+
+            public MyInt(int value) {
+                this.value = value;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                try {
+                    return this.value == ((MyInt) obj).value;
+                }
+                catch (Exception e) {
+                    return false;
+                }
+            }
+
+            public boolean equals(int a) {
+                return value == a;
             }
         }
 
@@ -118,6 +161,10 @@ public class Dispatcher {
             }
 
             byte[][] buffers = new byte[256][];
+
+            public int getBuffersCount() {
+                return buffersCount;
+            }
 
             int buffersCount = 0;
 
